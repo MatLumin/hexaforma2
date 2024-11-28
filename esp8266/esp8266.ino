@@ -117,7 +117,7 @@ void print_data_file()
 
 
 void hh_ui_index() {
-  int data[FILTER_COUNT] = {0};
+  unsigned long data[FILTER_COUNT] = {0};
   for (int i = 0; i < FILTER_COUNT; i++) 
     {
 	  if (server.hasArg(String(i))) 
