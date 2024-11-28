@@ -102,12 +102,12 @@ unsigned long int * read_filters_from_spiffs()
 void print_all_filters()
 	{
 	unsigned long int * data = read_filters_from_spiffs();
-	Serial.println("PRINTING ALL FILTERS ---------")
+	Serial.println("PRINTING ALL FILTERS ---------");
 	for (int index=0; index!=FILTER_COUNT; index+=1)
 		{
 		Serial.println(data[index]);
 		}
-	Serial.println("------------------------------")
+	Serial.println("------------------------------");
 	}
 
 
@@ -195,7 +195,7 @@ void loop() {
 	int bytes_sent = Serial1.available();
 	if (bytes_sent > 1)
 		{
-		int fisrt_byte = Serial1.read();
+		int first_byte = Serial1.read();
 		if (first_byte == CMD_FECTH_FILTERS_CODE)
 			{
 			Serial.flush();
