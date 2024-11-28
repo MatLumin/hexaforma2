@@ -1,0 +1,73 @@
+<style>
+:root {
+  --nik_comp_color:#e02e28;
+}
+body {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(0deg, #1a1a1a, rgb(34, 34, 34));
+}
+html {
+  width: 100vw;
+  height: 100vh;
+}
+* {
+  font-family: sans-serif;
+  font-size: 3vh;
+  border-radius: 2vh;
+  font-weight: bold;
+}
+input {
+  display: block;
+  background: white;
+  color: black;
+  width: 80%;
+  margin-bottom: 5%;
+  padding: 2%;
+  text-align:center;
+  border: 2px solid black;
+}
+input:focus {
+  border-color: var(--nik_comp_color);
+  outline-style: none;
+}
+button {
+  border-style: none;
+  padding: 5%;
+  transition: 0.3s;
+  background-color: var(--nik_comp_color);
+  color: white;
+}
+button:hover {
+  transform: translateY(-20px);
+  transition: 0.3s;
+}
+button:active {
+  transform: translateY(+20px);
+  transition: 0.3s;
+}
+#main_form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+label {
+  color: var(--nik_comp_color);
+}
+</style>
+<title>HEXA FORM</title>
+<body>
+<form id="main_form">
+  <label>Field 1</label>
+  <input type="text" value="HEX_VALUE_PLACE_HOLDER_0" name="0" maxlength="10">
+  <label>Field 2</label>
+  <input type="text" value="HEX_VALUE_PLACE_HOLDER_1" name="1" maxlength="10">
+  <label>Field 3</label>
+  <input type="text" value="HEX_VALUE_PLACE_HOLDER_2" name="2" maxlength="10">
+  <label>Field 4</label>
+  <input type="text" value="HEX_VALUE_PLACE_HOLDER_3" name="3" maxlength="10">
+  <label>Field 5</label>
+  <input type="text" value="HEX_VALUE_PLACE_HOLDER_4" name="4" maxlength="10">
+  <button type="submit">Submit</button>
+</form>
+</body>

@@ -113,33 +113,39 @@ void print_all_filters()
 
 void hh_ui_index() {
   int data[FILTER_COUNT] = {0};
-  for (int i = 0; i < FILTER_COUNT; i++) {
-	if (server.hasArg(String(i))) {
-	  data[i] = strtol(server.arg(String(i)).c_str(), NULL, 16);
-	}
-  }
+  for (int i = 0; i < FILTER_COUNT; i++) 
+    {
+	  if (server.hasArg(String(i))) 
+      {
+      String value = server.arg(String(i));
+      value.toUpperCase();
+      value.replace("0X", "");
+	    data[i] = strtol().c_str(), NULL, 16);
+	    }
+    }
 
 
   File file = SPIFFS.open("/data.txt", "w");
-  for (int i = 0; i < FILTER_COUNT; i++) {
-	file.println(data[i]);
-  }
+  for (int i = 0; i < FILTER_COUNT; i++) 
+    {
+	  file.println(data[i]);
+    }
   file.close();
 
 
   file = SPIFFS.open("/data.txt", "r");
   for (int i = 0; i < FILTER_COUNT && file.available(); i++)
-	{
-	data[i] = file.readStringUntil('\n').toInt();
-	}
+	  {
+	  data[i] = file.readStringUntil('\n').toInt();
+	  }
   file.close();
 
 
   String output = INDEX_HTML;
   for (int i = 0; i < FILTER_COUNT; i++)
-	{
-	output.replace("HEX_VALUE_PLACE_HOLDER_" + String(i), String(data[i], HEX));
-	}
+	  {
+	  output.replace("HEX_VALUE_PLACE_HOLDER_" + String(i), String(data[i], HEX)+"0X");
+	  }
 
 
   server.send(200, "text/html", output);
