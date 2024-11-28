@@ -101,14 +101,19 @@ unsigned long int * read_filters_from_spiffs()
 
 void print_all_filters()
 	{
-	unsigned long int * data = read_filters_from_spiffs();
-	Serial.println("PRINTING ALL FILTERS ---------");
-	for (int index=0; index!=FILTER_COUNT; index+=1)
-		{
-		Serial.println(data[index]);
-		}
-	Serial.println("------------------------------");
+  File file = SPIFFS.open("/data.txt", "r");
+  while (file.available())
+    {
+    char charcode = (file.read());
+    Serial.print(charcode);
+    }
 	}
+
+
+void print_data_file()
+  {
+  
+  }
 
 
 void hh_ui_index() {
@@ -120,7 +125,7 @@ void hh_ui_index() {
       String value = server.arg(String(i));
       value.toUpperCase();
       value.replace("0X", "");
-	    data[i] = strtol().c_str(), NULL, 16);
+	    data[i] = strtol(value.c_str(), NULL, 16);
 	    }
     }
 
@@ -144,7 +149,7 @@ void hh_ui_index() {
   String output = INDEX_HTML;
   for (int i = 0; i < FILTER_COUNT; i++)
 	  {
-	  output.replace("HEX_VALUE_PLACE_HOLDER_" + String(i), String(data[i], HEX)+"0X");
+	  output.replace("HEX_VALUE_PLACE_HOLDER_" + String(i), "0X"+String(data[i], HEX));
 	  }
 
 
@@ -161,7 +166,7 @@ String generate_ssid() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
 	Serial1.begin(9600);
 
   if (!SPIFFS.begin()) {
@@ -198,23 +203,26 @@ void setup() {
 void loop() {
   server.handleClient();
 
-	int bytes_sent = Serial1.available();
-	if (bytes_sent > 1)
-		{
-		int first_byte = Serial1.read();
-		if (first_byte == CMD_FECTH_FILTERS_CODE)
-			{
-			Serial.flush();
-			unsigned long int * data = read_filters_from_spiffs();
-			for (int i = 0; i!= FILTER_COUNT; i+=1)
-				{
-				unsigned long int value = data[i];
-				Serial1.write((value & 0b00000000000000000000000011111111) >> 0);
-				Serial1.write((value & 0b00000000000000001111111100000000) >> 8);
-				Serial1.write((value & 0b00000000111111110000000000000000) >> 16);
-				Serial1.write((value & 0b11111111000000000000000000000000) >> 24);
-				}
-			}
-		}
+  if (Serial1)
+    {
+    int bytes_sent = Serial1.available();
+    if (bytes_sent > 1)
+      {
+      int first_byte = Serial1.read();
+      if (first_byte == CMD_FECTH_FILTERS_CODE)
+        {
+        Serial.flush();
+        unsigned long int * data = read_filters_from_spiffs();
+        for (int i = 0; i!= FILTER_COUNT; i+=1)
+          {
+          unsigned long int value = data[i];
+          Serial1.write((value & 0b00000000000000000000000011111111) >> 0);
+          Serial1.write((value & 0b00000000000000001111111100000000) >> 8);
+          Serial1.write((value & 0b00000000111111110000000000000000) >> 16);
+          Serial1.write((value & 0b11111111000000000000000000000000) >> 24);
+          }
+        }
+      }
+    }
 
 }
