@@ -2,8 +2,12 @@
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include <LittleFS.h>
+#define data_serial Serial1
+
 
 const int FILTER_COUNT = 5;
+
+
 
 //COMMANDS CODES 
 const int CMD_FECTH_FILTERS_CODE = 85;
@@ -87,17 +91,6 @@ label {
 ESP8266WebServer server(80);
 
 
-unsigned long int * read_filters_from_spiffs()
-	{
-	unsigned long int data[FILTER_COUNT];
-	File file = SPIFFS.open("/data.txt", "r");
-	for (int i = 0; i < FILTER_COUNT && file.available(); i++)
-		{
-		data[i] = file.readStringUntil('\n').toInt();
-		}
-	file.close();
-	return data;
-	}
 
 void print_all_filters()
 	{
@@ -203,24 +196,26 @@ void setup() {
 void loop() {
   server.handleClient();
 
-  if (Serial1)
+  if (data_serial)
     {
-    int bytes_sent = Serial1.available();
+    int bytes_sent = data_serial.available();
     if (bytes_sent > 1)
       {
-      int first_byte = Serial1.read();
+      int first_byte = data_serial.read();
       if (first_byte == CMD_FECTH_FILTERS_CODE)
         {
-        Serial.flush();
-        unsigned long int * data = read_filters_from_spiffs();
-        for (int i = 0; i!= FILTER_COUNT; i+=1)
+        data_serial.flush();
+        Serial.println("SENDING THE FILTERS!!");
+        File file = SPIFFS.open("/data.txt", "r");
+        for (int i = 0; i < FILTER_COUNT && file.available(); i++)
           {
-          unsigned long int value = data[i];
-          Serial1.write((value & 0b00000000000000000000000011111111) >> 0);
-          Serial1.write((value & 0b00000000000000001111111100000000) >> 8);
-          Serial1.write((value & 0b00000000111111110000000000000000) >> 16);
-          Serial1.write((value & 0b11111111000000000000000000000000) >> 24);
+          String current = file.readStringUntil('\n');
+          Serial.println(current);
+          data_serial.println(current);
           }
+        file.close();
+
+
         }
       }
     }
