@@ -12,8 +12,8 @@ MCP_CAN CAN0(53);
 #define CAN1_INT 3  // Pin di interruzione per CAN1
 MCP_CAN CAN1(10);  // Pin CS per il secondo modulo CAN
 
-time_t last_filter_fetching = (time_t) (0);
-const int FILTER_FETCHING_CYCLE_DELAY = 4;
+unsigned long int last_filter_fetching = 0;
+const int FILTER_FETCHING_CYCLE_DELAY = 4000;
 const int FILTER_COUNT = 5;
 
 
@@ -82,8 +82,7 @@ void loop() {
     }
   }
 
-  time_t now;
-  time(&now);
+  unsigned long int now = milis();
   bool condition_1 = (now - last_filter_fetching ) > FILTER_FETCHING_CYCLE_DELAY;
   print("condition_1:");
   print(condition_1);
@@ -109,9 +108,9 @@ void loop() {
     
     for (int index = 0; index != FILTER_COUNT; index+= 1)
       {
-      CAN0.init_Filt(index, 1, filter[index]);
+      CAN0.init_Filt(index, 1, filters[index]);
       }
-    time(&last_filter_fetching);
+    last_filter_fetching = now;
     }
 
 
