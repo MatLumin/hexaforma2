@@ -211,12 +211,8 @@ void loop() {
           {
           String current = file.readStringUntil('\n');
           Serial.println(current);
-          for (int i2 = 0; i2!=current.length(); i2++)
-            {
-            data_serial.write(current[i2]);
-            }
-          data_serial.write('x');
-          
+          current += "x";
+          data_serial.print(current);
           }
         file.close();
 
