@@ -1,126 +1,169 @@
-#include <mcp_can.h>
-#include <SPI.h>
 #include <time.h>
-
-#define s1r Serial1.read // fixed:it was serial isntaed of serial 1
+#define filter_data_serial Serial
+#define s1r filter_data_serial.read // fixed:it was serial isntaed of serial 1
 #define print Serial.println
 
-#define CAN0_INT 2  
-MCP_CAN CAN0(53); 
 
-// Definizione dei pin per il secondo modulo MCP2515
-#define CAN1_INT 3  // Pin di interruzione per CAN1
-MCP_CAN CAN1(10);  // Pin CS per il secondo modulo CAN
+//CAN PRES ===============================
+#include <mcp_can.h>
+#define CAN0_INT 2 // Set INT to pin 2
+#define CAN1_INT 3 // Set INT to pin 3
+// =========================================
+
+//CAN GLOBALS ===============================
+long unsigned int rxId;
+unsigned char len = 0;
+unsigned char rxBuf[8];
+char msgString[128];
+MCP_CAN CAN0(53); // Set CS to pin 53 for CAN0
+MCP_CAN CAN1(10); // Set CS to pin 10 for CAN1
+// =========================================
+
 
 unsigned long int last_filter_fetching = 0;
 const int FILTER_FETCHING_CYCLE_DELAY = 4000;
 const int FILTER_COUNT = 5;
+const int filter_seprator = 120; //character new line
 
-
-void setup() {
+void setup() 
+  {
   Serial.begin(9600);
-  Serial1.being(115200);
+  filter_data_serial.begin(9600);
 
-  pinMode(53, OUTPUT);
-  digitalWrite(53, HIGH);
-
-  // Assicurati che il pin 10 (CS per CAN1) sia impostato come output
-  pinMode(10, OUTPUT);
-  digitalWrite(10, HIGH);
-
-  // Inizializzazione del primo modulo MCP2515 (CAN0)
-  if (CAN0.begin(MCP_STDEXT, CAN_250KBPS, MCP_8MHZ) == CAN_OK) 
+  //CAN SETUP THINGS ===========================
+  if (CAN0.begin(MCP_STDEXT, CAN_250KBPS, MCP_8MHZ) == CAN_OK)
     {
-    Serial.println("CAN0 Initialized Successfully!");
-
+    print("CAN0 Initialized Successfully!");
     CAN0.init_Mask(0, 1, 0x1FFFFFFF); 
     for (int i = 0; i < FILTER_COUNT; i++) 
       {
       CAN0.init_Filt(i, 1, 0x00000000); 
       }
-    CAN0.setMode(MCP_NORMAL);
+    CAN0.setMode(MCP_NORMAL); 
     } 
-    
-else 
+  else 
+      {
+      print("Error Initializing CAN0...");
+      while (1);
+      }
+
+  if (CAN1.begin(MCP_ANY, CAN_250KBPS, MCP_8MHZ) == CAN_OK) 
     {
-    Serial.println("Error Initializing CAN0...");
+    print("MCP2515 CAN1 Initialized Successfully!");
+    } 
+  else 
+    {
+    print("Error Initializing MCP2515 CAN1...");
     while (1);
     }
 
-  // Inizializzazione del secondo modulo MCP2515 (CAN1)
-  if (CAN1.begin(MCP_STDEXT, CAN_250KBPS, MCP_8MHZ) == CAN_OK) {
-    Serial.println("CAN1 Initialized Successfully!");
-  } else {
-    Serial.println("Error Initializing CAN1...");
-    while (1);
+  CAN1.setMode(MCP_NORMAL); // Set operation mode to normal for CAN1
+
+  pinMode(CAN0_INT, INPUT); // Configuring pin for /INT input (CAN0)
+  pinMode(CAN1_INT, INPUT); // Configuring pin for /INT input (CAN1)
+  // ===========================================
+
   }
 
-  CAN1.setMode(MCP_NORMAL); // Imposta CAN1 in modalità normale
-
-  Serial.println("MCP2515 Dual CAN Bus Example...");
-}
 
 void loop() {
-
-  long unsigned int rxId;
-  unsigned char len = 0;
-  unsigned char rxBuf[8];
-
-  if (!digitalRead(CAN0_INT)) {
+  if (!digitalRead(CAN0_INT)) 
+    {
     // Leggi il messaggio da CAN0
     CAN0.readMsgBuf(&rxId, &len, rxBuf);
+    if ((rxId & 0x80000000) == 0x80000000) 
+      {
+      sprintf(msgString, "Extended ID: 0x%.8lX  DLC: %1d  Data:", (rxId & 0x1FFFFFFF), len);
+      } 
+    else 
+      {
+      sprintf(msgString, "Standard ID: 0x%.3lX       DLC: %1d  Data:", rxId, len);
+      }
+    Serial.print(msgString);
+    if ((rxId & 0x40000000) == 0x40000000) 
+      {
+      sprintf(msgString, " REMOTE REQUEST FRAME");
+      Serial.print(msgString);
+      } 
+    else 
+      {
+      for (byte i = 0; i < len; i++) 
+        {
+        sprintf(msgString, " 0x%.2X", rxBuf[i]);
+        Serial.print(msgString);
+        }
+      }
 
- 
+    Serial.println();
 
-    // Invia il messaggio letto a CAN1
-    if (CAN1.sendMsgBuf(rxId, 1, len, rxBuf) == CAN_OK) {
+    // Invia il messaggio letto su CAN1
+    if (CAN1.sendMsgBuf(rxId, 1, len, rxBuf) == CAN_OK) 
+      {
       Serial.print("Message relayed to CAN1 ID: 0x");
-      Serial.print(rxId, HEX);
-      Serial.println();
-    } else {
+      Serial.println(rxId, HEX);
+      } 
+    else 
+      {
       Serial.println("Error sending message to CAN1");
+      }
     }
-  }
 
-  unsigned long int now = milis();
+
+  unsigned long int now = millis();
   bool condition_1 = (now - last_filter_fetching ) > FILTER_FETCHING_CYCLE_DELAY;
-  print("condition_1:");
-  print(condition_1);
+  print(".");
+  delay(1000);
   if (condition_1)
     {
-    Serial.println("sending the filter fetching command to esp");
-    Serial1.write(85);
-    Serial.println("sent the filter fetching command to esp");
-    Serial1.flush();
-    Serial.println("now waiting for esp to send the filters");
-    delay(10); // calcualted 
+    print("");
+    print("sending the filter fetching command to esp");
+    filter_data_serial.write(85);
+    print("sent the filter fetching command to esp");
+    filter_data_serial.flush();
+    print("now waiting for esp to send the filters");
     unsigned long filters[FILTER_COUNT];
     for (int index = 0; index != FILTER_COUNT; index += 1)
       {
-      //reassembling the filters , byte by byte
+      while (filter_data_serial.available() == 0)
+        {
+        print("no data received yet");
+        delay(1000);
+        }
+      print("some data are now sent from esp; going to read them");
+      String buffer = "";
+      while (true)
+        {
+        int data = filter_data_serial.read();
+        if (data == -1 || data == 10)
+          {
+          //when no data is actually availbale in buffer 
+          print("null data was in buffer (-1)");
+          delay(1000);
+          continue;
+          }
+        if (data == filter_seprator)
+          {
+          print("encountred the sperator; breaking the reading loop");
+          break;
+          }
+        print("recieved data of :");
+        print(data);
+        buffer += (char) data;
+        }
+      print("buffer [STRING]:");
+      print(buffer);
+      filters[index] = strtoul(buffer.c_str(), NULL, 10);
+      print("buffer [UNSIGNED LONG]:");
+      }
 
-      filters[index] += (Serial1.readStringUntil("\n")).toInt();
-      print(filters[index])
-      print(index);
-      print(" -> ");
-      print(filters[index]);
+    print("=======================");
+    print("filters are:");
+    for (int filter : filters)
+      {
+      print(filter);
       }
     
-    for (int index = 0; index != FILTER_COUNT; index+= 1)
-      {
-      CAN0.init_Filt(index, 1, filters[index]);
-      }
     last_filter_fetching = now;
     }
-
-
-
-  
-
-
-
-
-
-
 
 }
